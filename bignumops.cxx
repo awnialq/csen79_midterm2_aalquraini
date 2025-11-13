@@ -15,7 +15,16 @@ BigNum& BigNum::operator=(const BigNum &rhs) { this->deepCopy(rhs); return *this
 BigNum& BigNum::operator=(BigNum &&rhs) {return this->operator=(rhs);}	// move operator
 
 // implement these three
-BigNum::BigNum(const long &n) {}
+BigNum::BigNum(const long &n) {
+    if(n < 0){
+        sign = -1;
+    }
+
+    digits = new (std::nothrow) store_t[INCREMENT];
+    if(digits == nullptr) { throw std::bad_alloc();}
+
+    
+}
 BigNum& BigNum::operator+(const BigNum &op) { return *this; }
 void BigNum::deepCopy(const BigNum &rhs) {}
 
