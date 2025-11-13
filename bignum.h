@@ -4,6 +4,7 @@
  */
 #ifndef BIGNUM_H
 #define BIGNUM_H
+#include <limits>
 
 namespace csen79 {
 /* Integer of near infinitive capacity */

@@ -6,13 +6,13 @@ using namespace std;
 using namespace csen79;
 
 /*
- * Write your own "main" as tester.  Exercise all code you wrote.  Make sure to cover boundary condistions.
- * Come up with a way to fake "new" failures.  (call fault injection)
+ * Simple interactive program for BigNum.
+ * For comprehensive testing, use the Python test script: test_bignum.py
  */
 int main(void) {
 	std::string str;
 	while (true) {
-		cout << "#Enter number of 'q': ";
+		cout << "#Enter number or 'q' to quit: ";
 		cin >> str;
 		cout << endl;
 		if (str[0] == 'q' || str[0] == 'Q')

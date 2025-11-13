@@ -53,6 +53,7 @@ BigNum::BigNum(const long &n) {
 
 BigNum& BigNum::operator+(const BigNum &op) {
 
+
     if(op.sign == this->sign){
         int indx = 0;
         buffer_t carry = 0;
@@ -79,7 +80,7 @@ BigNum& BigNum::operator+(const BigNum &op) {
     }
 
     else{
-        std::cout << "Spec does not require proper handling of opposite sign addition"
+        std::cout << "Not Valid Input" << std::endl;
     }
 
 
