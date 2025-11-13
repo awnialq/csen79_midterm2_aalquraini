@@ -21,6 +21,7 @@ BigNum::BigNum(const long &n) {
     if(n < 0){
         sign = -1;
     }
+    else{ sign = 1; }
 
     capacity = INCREMENT;
 
@@ -50,8 +51,40 @@ BigNum::BigNum(const long &n) {
 
 }
 
-BigNum& BigNum::operator+(const BigNum &op) { 
+BigNum& BigNum::operator+(const BigNum &op) {
 
+    if(op.sign == this->sign){
+        int indx = 0;
+        buffer_t carry = 0;
+
+        while(indx < this->high || indx < op.high || carry > 0){
+            try{
+                checkCapacity(indx);
+            }   catch(std::exception &e){
+                std::cerr << e.what() << std::endl;
+            }
+
+            buffer_t num1 = (indx < static_cast<int>(op.high)) ? op.digits[indx] : 0;
+            buffer_t num2 = (indx < static_cast<int>(this->high)) ? this->digits[indx] : 0;
+            buffer_t add = num1 + num2 + carry;
+
+            carry = add / StoreCap;
+
+            this->digits[indx++] = static_cast<store_t>(add % StoreCap);
+
+            if(indx > this->high){
+                this->high = indx;
+            }
+        }
+    }
+
+    else{
+        std::cout << "Spec does not require proper handling of opposite sign addition"
+    }
+
+
+    return *this;
+    /*
     // handle self-add: make a copy and add that
     if (&op == this) {
         BigNum tmp(op);
@@ -70,7 +103,7 @@ BigNum& BigNum::operator+(const BigNum &op) {
     // same sign: magnitude add into *this
     if (this->sign == op.sign) {
         int i = 0;
-        BigNum::buffer_t carry = 0;
+        buffer_t carry = 0;
         for (; i < static_cast<int>(this->high) || i < static_cast<int>(op.high) || carry; ++i) {
             try{ checkCapacity(i); } catch(std::exception &e){ std::cerr << e.what() << std::endl; }
             BigNum::buffer_t av = (i < static_cast<int>(this->high)) ? this->digits[i] : 0;
@@ -148,6 +181,7 @@ BigNum& BigNum::operator+(const BigNum &op) {
         this->sign = op.sign;
         return *this;
     }
+    */
 }
 
 void BigNum::deepCopy(const BigNum &rhs) {
