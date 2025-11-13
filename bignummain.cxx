@@ -1,6 +1,5 @@
 #include <string>
 #include <iostream>
-#include <exception>
 #include "bignum.h"
 
 using namespace std;

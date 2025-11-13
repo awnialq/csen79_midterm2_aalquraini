@@ -48,8 +48,26 @@ BigNum::BigNum(const long &n) {
     high = index;
 
 }
-BigNum& BigNum::operator+(const BigNum &op) { return *this; }
-void BigNum::deepCopy(const BigNum &rhs) {}
+
+BigNum& BigNum::operator+(const BigNum &op) { 
+
+
+
+    return *this;
+}
+
+void BigNum::deepCopy(const BigNum &rhs) {
+    store_t *temp = new store_t[rhs.capacity];
+    delete [] digits;
+    digits = temp;
+
+    high = rhs.high;
+    sign = rhs.sign;
+
+    for(int i = 0; i < high; ++i){
+        digits[i] = rhs.digits[i];
+    }
+}
 
 // Formatted output
 std::ostream& operator<<(std::ostream &os, const BigNum &n) {
