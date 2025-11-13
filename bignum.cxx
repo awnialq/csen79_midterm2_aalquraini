@@ -39,7 +39,11 @@ BigNum::BigNum(const std::string s): BigNum() {
 
 		// with each incoming decimal digit, multiply all digits by 10
 		for (idx = 0, buffer = 0; idx < high || buffer > 0; ++idx) {
-			checkCapacity(idx);
+
+			try{
+				checkCapacity(idx);
+			} catch(std::exception &e){ std::cerr << e.what() << std::endl;}
+			
 			buffer += digits[idx] * 10;
 			if (buffer < StoreCap) {
 				digits[idx] = buffer;
@@ -57,17 +61,23 @@ BigNum::BigNum(const std::string s): BigNum() {
 		idx = 0;
 		bool carry(false);
 		// now we take in the next decimal digit
-		checkCapacity(idx);
+		try{
+			checkCapacity(idx);
+		} catch(std::exception &e){ std::cerr << e.what() << std::endl;}
 		buffer = digits[idx] + int(*it) - int('0');
 		do {
-			checkCapacity(idx);
+			try{
+				checkCapacity(idx);
+			} catch(std::exception &e){ std::cerr << e.what() << std::endl;}
 			carry = buffer >= StoreCap;		// does it carry?
 			if (!carry)
 				digits[idx] = buffer;	// simple case.  we're done.
 			else {
 				// same algorithm as above
 				digits[idx] = buffer % StoreCap;
-				checkCapacity(idx+1);
+				try{
+					checkCapacity(idx);
+				} catch(std::exception &e){ std::cerr << e.what() << std::endl;}
 				buffer = digits[idx+1] + static_cast<store_t>(buffer / StoreCap);
 				++idx;
 			}

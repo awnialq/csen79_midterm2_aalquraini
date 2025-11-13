@@ -16,14 +16,37 @@ BigNum& BigNum::operator=(BigNum &&rhs) {return this->operator=(rhs);}	// move o
 
 // implement these three
 BigNum::BigNum(const long &n) {
+    unsigned long mag;    //magnitude of the long
     if(n < 0){
         sign = -1;
     }
 
-    digits = new (std::nothrow) store_t[INCREMENT];
+    capacity = INCREMENT;
+
+    digits = new (std::nothrow) store_t[capacity];
     if(digits == nullptr) { throw std::bad_alloc();}
 
+    if(n == 0){
+        digits[0] = 0;
+        high = 1;
+        return;
+    }
+
+    mag = static_cast<unsigned long>(std::abs(n));
+    int index = 0;
     
+    while(mag > 0){
+        try{
+            checkCapacity(index);
+        } catch(std::exception &e){ std::cerr << e.what() << std::endl;}
+
+        digits[index++] = mag % StoreCap;
+
+        mag = mag / StoreCap;
+    }
+
+    high = index;
+
 }
 BigNum& BigNum::operator+(const BigNum &op) { return *this; }
 void BigNum::deepCopy(const BigNum &rhs) {}
