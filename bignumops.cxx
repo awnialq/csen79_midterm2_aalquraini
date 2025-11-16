@@ -5,25 +5,25 @@
 #include <exception>
 #include <iostream>
 #include <vector>
+#include <cstring>
 #include "bignum.h"
 
 namespace csen79 {
 
 // trivial and lazy implementations.  consider enhancing these.
 BigNum::~BigNum() { delete [] digits; }
-BigNum::BigNum(const BigNum &rhs) {this->operator=(rhs);}
+BigNum::BigNum(const BigNum &rhs) : digits(nullptr), high(0), sign(1), capacity(0) {this->operator=(rhs);}
 
 BigNum& BigNum::operator=(const BigNum &rhs) { this->deepCopy(rhs); return *this; }
 BigNum& BigNum::operator=(BigNum &&rhs) {return this->operator=(rhs);}	// move operator
 
 // implement these three
-BigNum::BigNum(const long long &n): digits(nullptr), high(0), capacity(0) {
+BigNum::BigNum(const long &n): digits(nullptr), high(0), sign(1), capacity(0) {
     // Handle zero case first
-    if(n == 0){
-        sign = 1;
-        try{
+    if (n == 0) {
+        try {
             checkCapacity(0);
-        } catch(std::exception &e){ 
+        } catch(std::exception &e) {
             std::cerr << e.what() << std::endl;
             throw;
         }
@@ -31,79 +31,43 @@ BigNum::BigNum(const long long &n): digits(nullptr), high(0), capacity(0) {
         high = 1;
         return;
     }
-    
+
     // Determine sign and convert to unsigned magnitude
-    unsigned long long mag;
-    if(n < 0){
+    unsigned long mag;
+    if (n < 0) {
         sign = -1;
-        // Handle negative numbers carefully to avoid overflow
-        mag = static_cast<unsigned long long>(-(n + 1)) + 1;
-    }
-    else{ 
+        mag = static_cast<unsigned long>(-(n + 1)) + 1;
+    } else {
         sign = 1;
-        mag = static_cast<unsigned long long>(n);
+        mag = static_cast<unsigned long>(n);
     }
 
     int index = 0;
-    
-    // Extract digits in base 256 (little-endian: least significant first)
-    while(mag > 0){
-        try{
+
+    // Extract digits in base 256
+    while (mag > 0) {
+        try {
             checkCapacity(index);
-        } catch(std::exception &e){ 
+        } catch(std::exception &e) {
             std::cerr << e.what() << std::endl;
             throw;
         }
 
         digits[index] = static_cast<store_t>(mag % StoreCap);
+        if (high <= static_cast<unsigned int>(index))
+            high = index + 1;
         mag = mag / StoreCap;
         index++;
     }
-
-    high = index;
 }
 
 BigNum& BigNum::operator+(const BigNum &op) {
-
-
-    if(op.sign == this->sign){
-        int indx = 0;
-        buffer_t carry = 0;
-
-        while(indx < this->high || indx < op.high || carry > 0){
-            try{
-                checkCapacity(indx);
-            }   catch(std::exception &e){
-                std::cerr << e.what() << std::endl;
-            }
-
-            buffer_t num1 = (indx < static_cast<int>(op.high)) ? op.digits[indx] : 0;
-            buffer_t num2 = (indx < static_cast<int>(this->high)) ? this->digits[indx] : 0;
-            buffer_t add = num1 + num2 + carry;
-
-            carry = add / StoreCap;
-
-            this->digits[indx++] = static_cast<store_t>(add % StoreCap);
-
-            if(indx > this->high){
-                this->high = indx;
-            }
-        }
+    // Handle self-addition: make a copy
+    if (this == &op) {
+        BigNum temp(op);
+        return this->operator+(temp);
     }
-
-    else{
-        std::cout << "Not Valid Input" << std::endl;
-    }
-
-
-    return *this;
-    /*
-    // handle self-add: make a copy and add that
-    if (&op == this) {
-        BigNum tmp(op);
-        return this->operator+(tmp);
-    }
-
+    
     // compare magnitudes: return 1 if a>b, 0 if equal, -1 if a<b
     auto cmpMag = [](const BigNum &a, const BigNum &b)->int {
         if (a.high != b.high) return (a.high > b.high) ? 1 : -1;
@@ -118,7 +82,7 @@ BigNum& BigNum::operator+(const BigNum &op) {
         int i = 0;
         buffer_t carry = 0;
         for (; i < static_cast<int>(this->high) || i < static_cast<int>(op.high) || carry; ++i) {
-            try{ checkCapacity(i); } catch(std::exception &e){ std::cerr << e.what() << std::endl; }
+            try { checkCapacity(i); } catch(std::exception &e) { std::cerr << e.what() << std::endl; }
             BigNum::buffer_t av = (i < static_cast<int>(this->high)) ? this->digits[i] : 0;
             BigNum::buffer_t bv = (i < static_cast<int>(op.high)) ? op.digits[i] : 0;
             BigNum::buffer_t s = av + bv + carry;
@@ -137,7 +101,7 @@ BigNum& BigNum::operator+(const BigNum &op) {
     if (cmp == 0) {
         // magnitudes equal -> result is zero
         if (this->capacity == 0) {
-            try{ checkCapacity(0); } catch(std::exception &e){ std::cerr << e.what() << std::endl; }
+            try { checkCapacity(0); } catch(std::exception &e) { std::cerr << e.what() << std::endl; }
         }
         this->digits[0] = 0;
         this->high = 1;
@@ -148,9 +112,9 @@ BigNum& BigNum::operator+(const BigNum &op) {
     if (cmp > 0) {
         // |this| > |op|, compute this = this - op
         BigNum::buffer_t borrow = 0;
-        for (int i = 0; i < static_cast<int>(this->high); ++i) {
+        for (unsigned int i = 0; i < this->high; ++i) {
             BigNum::buffer_t av = this->digits[i];
-            BigNum::buffer_t bv = (i < static_cast<int>(op.high)) ? op.digits[i] : 0;
+            BigNum::buffer_t bv = (i < op.high) ? op.digits[i] : 0;
             if (av < bv + borrow) {
                 this->digits[i] = static_cast<BigNum::store_t>(av + StoreCap - bv - borrow);
                 borrow = 1;
@@ -170,10 +134,11 @@ BigNum& BigNum::operator+(const BigNum &op) {
         size_t newCap = newHigh + INCREMENT;
         BigNum::store_t *res = new (std::nothrow) BigNum::store_t[newCap];
         if (res == nullptr) throw std::bad_alloc();
+        memset(res, 0, sizeof(BigNum::store_t) * newCap);
         // perform subtraction op - this
         BigNum::buffer_t borrow = 0;
         for (unsigned int i = 0; i < newHigh; ++i) {
-            BigNum::buffer_t av = op.digits[i];
+            BigNum::buffer_t av = (i < op.high) ? op.digits[i] : 0;
             BigNum::buffer_t bv = (i < this->high) ? this->digits[i] : 0;
             if (av < bv + borrow) {
                 res[i] = static_cast<BigNum::store_t>(av + StoreCap - bv - borrow);
@@ -194,7 +159,6 @@ BigNum& BigNum::operator+(const BigNum &op) {
         this->sign = op.sign;
         return *this;
     }
-    */
 }
 
 void BigNum::deepCopy(const BigNum &rhs) {

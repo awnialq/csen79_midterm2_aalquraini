@@ -19,7 +19,7 @@ public:
 	 */ 
 	BigNum(): digits(nullptr), high(0), sign(1), capacity(0) {}
 	BigNum(const BigNum &);	// copy constructor
-	BigNum(const long long &);	// conversion constructor
+	BigNum(const long &);	// conversion constructor
 	BigNum(const std::string);	// construct with a string of 10-based digits
 
 	~BigNum();
