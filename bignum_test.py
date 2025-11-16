@@ -202,26 +202,62 @@ class BigNumTester:
         self.tests_passed += 1
         print(f"  ✓ All checks passed\n")
     
-    def run_all_tests(self):
+    def load_test_cases_from_file(self, filename: str) -> list:
+        """Load test cases from a file. Each pair of lines represents num1 and num2."""
+        test_cases = []
+        try:
+            with open(filename, 'r') as f:
+                lines = [line.strip() for line in f.readlines()]
+                
+            i = 0
+            pair_num = 1
+            while i < len(lines) - 1:
+                line1 = lines[i].strip()
+                line2 = lines[i + 1].strip()
+                
+                # Skip empty lines and quit command
+                if not line1 or not line2 or line1.lower() == 'quit' or line2.lower() == 'quit':
+                    break
+                
+                test_cases.append((line1, line2, f"Test pair {pair_num}"))
+                pair_num += 1
+                i += 2
+                
+        except FileNotFoundError:
+            print(f"Error: Test file '{filename}' not found")
+        except Exception as e:
+            print(f"Error reading test file: {e}")
+            
+        return test_cases
+    
+    def run_all_tests(self, test_file: str = None):
         """Run comprehensive test suite."""
         print("="*60)
         print("BigNum Class Test Suite")
         print("Testing: String Constructor, Long Constructor, Addition")
         print("="*60 + "\n")
         
-        # Test cases: (num1, num2, description)
-        test_cases = [
-            ("0", "0", "Zero values"),
-            ("1", "1", "Simple single digits"),
-            ("5", "7", "Single digit addition"),
-            ("123", "456", "Three digit numbers"),
-            ("999", "1", "Carry propagation"),
-            ("12345", "67890", "Five digit numbers"),
-            ("999999", "1", "Multiple carries"),
-            ("1234567890", "9876543210", "Large numbers"),
-            ("100", "200", "Round numbers"),
-            ("1000000", "2000000", "Millions"),
-        ]
+        if test_file:
+            print(f"Loading test cases from {test_file}...\n")
+            test_cases = self.load_test_cases_from_file(test_file)
+            if not test_cases:
+                print("No test cases loaded. Exiting.")
+                return False
+            print(f"Loaded {len(test_cases)} test pairs\n")
+        else:
+            # Default test cases: (num1, num2, description)
+            test_cases = [
+                ("0", "0", "Zero values"),
+                ("1", "1", "Simple single digits"),
+                ("5", "7", "Single digit addition"),
+                ("123", "456", "Three digit numbers"),
+                ("999", "1", "Carry propagation"),
+                ("12345", "67890", "Five digit numbers"),
+                ("999999", "1", "Multiple carries"),
+                ("1234567890", "9876543210", "Large numbers"),
+                ("100", "200", "Round numbers"),
+                ("1000000", "2000000", "Millions"),
+            ]
         
         for num1, num2, description in test_cases:
             self.test_case(num1, num2, description)
@@ -240,6 +276,13 @@ class BigNumTester:
         return self.tests_failed == 0
 
 def main():
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Test BigNum class implementation')
+    parser.add_argument('-f', '--file', type=str, default='testbig.txt',
+                        help='Test file containing number pairs (default: testbig.txt)')
+    args = parser.parse_args()
+    
     tester = BigNumTester()
     
     # Compile the program
@@ -248,7 +291,7 @@ def main():
         sys.exit(1)
     
     # Run all tests
-    success = tester.run_all_tests()
+    success = tester.run_all_tests(test_file=args.file)
     
     sys.exit(0 if success else 1)
 
