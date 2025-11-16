@@ -4,6 +4,7 @@
  */
 #include <exception>
 #include <iostream>
+#include <vector>
 #include "bignum.h"
 
 namespace csen79 {
@@ -16,39 +17,50 @@ BigNum& BigNum::operator=(const BigNum &rhs) { this->deepCopy(rhs); return *this
 BigNum& BigNum::operator=(BigNum &&rhs) {return this->operator=(rhs);}	// move operator
 
 // implement these three
-BigNum::BigNum(const long &n) {
-    unsigned long mag;    //magnitude of the long
-    if(n < 0){
-        sign = -1;
-    }
-    else{ sign = 1; }
-
-    capacity = INCREMENT;
-
-    digits = new (std::nothrow) store_t[capacity];
-    if(digits == nullptr) { throw std::bad_alloc();}
-
+BigNum::BigNum(const long long &n): digits(nullptr), high(0), capacity(0) {
+    // Handle zero case first
     if(n == 0){
+        sign = 1;
+        try{
+            checkCapacity(0);
+        } catch(std::exception &e){ 
+            std::cerr << e.what() << std::endl;
+            throw;
+        }
         digits[0] = 0;
         high = 1;
         return;
     }
+    
+    // Determine sign and convert to unsigned magnitude
+    unsigned long long mag;
+    if(n < 0){
+        sign = -1;
+        // Handle negative numbers carefully to avoid overflow
+        mag = static_cast<unsigned long long>(-(n + 1)) + 1;
+    }
+    else{ 
+        sign = 1;
+        mag = static_cast<unsigned long long>(n);
+    }
 
-    mag = static_cast<unsigned long>(std::abs(n));
     int index = 0;
     
+    // Extract digits in base 256 (little-endian: least significant first)
     while(mag > 0){
         try{
             checkCapacity(index);
-        } catch(std::exception &e){ std::cerr << e.what() << std::endl;}
+        } catch(std::exception &e){ 
+            std::cerr << e.what() << std::endl;
+            throw;
+        }
 
-        digits[index++] = mag % StoreCap;
-
+        digits[index] = static_cast<store_t>(mag % StoreCap);
         mag = mag / StoreCap;
+        index++;
     }
 
     high = index;
-
 }
 
 BigNum& BigNum::operator+(const BigNum &op) {
@@ -200,13 +212,54 @@ void BigNum::deepCopy(const BigNum &rhs) {
 
 // Formatted output
 std::ostream& operator<<(std::ostream &os, const BigNum &n) {
-    // if we want to be fancy
-    if (os.flags() & os.dec) { /* print in decimal */}
-    else if (os.flags() & os.hex) { /* print in hex */}
-    else if (os.flags() & os.oct) { /* print in oct */}
-
-    // since they did nothing
-    return n.osdebug(os);
+    // Convert from base-256 to decimal string
+    if (n.high == 0 || (n.high == 1 && n.digits[0] == 0)) {
+        os << "0";
+        return os;
+    }
+    
+    // Use a vector to store decimal digits
+    std::vector<unsigned char> decimal;
+    decimal.push_back(0);
+    
+    // Process each base-256 digit from high to low
+    for (int i = n.high - 1; i >= 0; --i) {
+        // Multiply current decimal result by 256
+        unsigned int carry = 0;
+        for (size_t j = 0; j < decimal.size(); ++j) {
+            unsigned int temp = decimal[j] * 256 + carry;
+            decimal[j] = temp % 10;
+            carry = temp / 10;
+        }
+        while (carry > 0) {
+            decimal.push_back(carry % 10);
+            carry /= 10;
+        }
+        
+        // Add the current base-256 digit
+        carry = n.digits[i];
+        for (size_t j = 0; j < decimal.size() && carry > 0; ++j) {
+            unsigned int temp = decimal[j] + carry;
+            decimal[j] = temp % 10;
+            carry = temp / 10;
+        }
+        while (carry > 0) {
+            decimal.push_back(carry % 10);
+            carry /= 10;
+        }
+    }
+    
+    // Output sign
+    if (n.sign < 0) {
+        os << "-";
+    }
+    
+    // Output decimal digits (stored in reverse order)
+    for (int i = decimal.size() - 1; i >= 0; --i) {
+        os << static_cast<char>('0' + decimal[i]);
+    }
+    
+    return os;
 }
 
 

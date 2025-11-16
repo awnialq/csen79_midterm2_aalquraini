@@ -18,10 +18,13 @@ int main(void) {
 		if (str[0] == 'q' || str[0] == 'Q')
 			break;
 		try {
+			long long longNum = std::stol(str);
 			BigNum bn(str);	// constructed with string
+			BigNum bnLong(longNum);
 			// this output is meant for Python to execute
 			cout << "orig=" << str << endl;
 			cout << "bn=" << bn << endl;
+			cout << "bnLong=" << bnLong << endl;
 			cout << "print('yes' if orig==bn else 'no')" << endl;
 			cout << endl;
 		} catch (std::bad_alloc const &e) {
